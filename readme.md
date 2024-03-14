@@ -10,7 +10,7 @@ The player needs to be loaded into DSP RAM and REGPAG must be set before it is s
 
 The HVL/AHX file needs to be converted with the `hvl2stream` for the Jaguar.
 
-The player can also optionally scan the pads every.
+The player can also optionally scan the pads every HVL frame which is with 50,100,150 or 200Hz.
 
 # The original tracker
 
