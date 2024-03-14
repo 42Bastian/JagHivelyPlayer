@@ -6,7 +6,7 @@ CFLAGS=-Wno-incompatible-pointer-types
 OBJ=hvl_replay.o hvl_tables.o main.o
 
 hvl2stream: $(OBJ)
-	gcc -o $@ $(CFLAGS) $(OBJ)
+	gcc -o $@ $(CFLAGS) $(OBJ) -lm
 
 .PHONY: clean
 clean:
