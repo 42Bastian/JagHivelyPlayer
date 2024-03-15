@@ -11,7 +11,7 @@ struct hvl_tune *ht = NULL;
 
 int main(int argc, char *argv[])
 {
-  printf("Hively Bitstream Converter (Based on Tracker CLI player 1.9)\n");
+  printf("Hively Bitstream Converter v2 (Based on Tracker CLI player 1.9)\n");
   if( argc < 2 )  {
     printf( "Usage: %s <tune>\n",argv[0]);
     return 0;

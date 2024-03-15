@@ -1676,7 +1676,7 @@ void hvl_process_frame( struct hvl_tune *ht, struct hvl_voice *voice )
     {
       flag_position_restart_lue = 1;
       position_byte32_restart = ((nb_bits_ecrits / 32) * 4);
-      position_bit_restart = 31-(nb_bits_ecrits- (position_byte32_restart*8));
+      position_bit_restart = 32-(nb_bits_ecrits- (position_byte32_restart*8));
       for (int i = 0; i < MAX_CHANNELS; i++)
         {
           ht->ht_Voices[i].old_vc_Pan = -1;
