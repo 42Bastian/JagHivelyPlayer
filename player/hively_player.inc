@@ -18,3 +18,16 @@ DSP_pad2                        .equ $f1d000-24 ; read by 68k/GPU
 DSP_pad1                        .equ $f1d000-28 ; read by 68k/GPU
 DSP_frequence_de_replay_reelle_I2S .equ $f1d000-32 ; read by 68k/GPU
 DSP_stream_pos                  .equ $f1d000-36 ; read by 68k/GPU
+
+
+;;; ----------------------------------------
+;;; Song header
+song_NB_channel         equ 0
+song_speed_multiplier   equ 1
+song_panningLeft        equ 2
+song_panningRight       equ 3
+song_rm_channels        equ 4
+song_restart_word	equ 8
+song_restart_bit	equ 12
+song_length             equ 16
+song_header_size        equ 20
