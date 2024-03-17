@@ -11,9 +11,9 @@ Since `B` stops the DSP, there is also pad reading in the 68k code.
 
 BJL uses original bit positions, therefore two differnet checks in the code.
 
-# Starting ROM
+## Starting ROM
 
-The ROM can use with BPE (enable BootROM!) or GD. Does not work on SKUNK!
+The ROM can be used with BPE (enable BootROM!) or GD. Does not work on SKUNK!
 
 ## GD
 
