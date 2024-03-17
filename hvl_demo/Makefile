@@ -25,25 +25,24 @@ ALL: $(DEMO).cof $(DEMO).j64
 %.o	: %.S
 	$(RMAC) $(_68KFLAGS) $< -o $@
 
-hively_player.bin: hively_player_v21.S
-	rmac -4 -fb -u -i$(BJL_ROOT)/68k_inc $<
-	rln -z -n -a f1b000 x x -o $@ hively_player_v21.o
+# Start of RAM code must be >= 6000
+#_68K_START=6000
+# Run in ROM (this address is a fix, do not change!)
+_68K_START=800410
 
 $(DEMO).o: gpu.o ../player/hively_player.bin
 
 $(DEMO).cof: $(DEMO).o
-	@$(RLN) -z -e -a 4000 x x -o $@ $<
+	@$(RLN) -z -e -a $(_68K_START) x x -o $@ $<
 
-$(DEMO).rom: $(DEMO).o
-	@$(RLN) -rw -z -n -a 802000 x x -o $@ $<
+$(DEMO).bin: $(DEMO).o
+	@$(RLN) -rw -z -n -a $(_68K_START) x x -o $@ $<
 
-.ONESHELL:
-$(DEMO).j64: $(DEMO).rom
-	@cat $(BJL_ROOT)/bin/Univ.bin $< >$@
+$(DEMO).j64: $(DEMO).bin
+	cp sbl.XXX  $@
 	cat $< >> $@
 	bzcat $(BJL_ROOT)/bin/allff.bin.bz2 >> $@
-	truncate -s 128K $@
-
+	truncate -s 1M $@
 
 include Rules.launch
 
@@ -53,4 +52,9 @@ clean:
 	rm -f *.o
 	rm -f *.equ
 	rm -f *~
-	rm -f *.rom *.abs
+	rm -f $(DEMO).bin
+
+.ONESHELL:
+.PHONY: real-clean
+real-clean: clean
+	rm -f  $(DEMO).j64

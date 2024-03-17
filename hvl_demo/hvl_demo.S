@@ -11,10 +11,10 @@
 vars		= $0001000
 
 max_x_txt	= 320
-max_y_txt	= 5*8
+max_y_txt	= 10*8
 
 max_x		= rez_x
-max_y_gr	= 180
+max_y_gr	= 100
 
 txt_screen	= $000c0000
 logo_screen	= txt_screen+(max_x_txt/8)*max_y_txt
@@ -33,6 +33,7 @@ ScreenMode	EQU CRY16|VIDEN|PWIDTH4|BGEN|CSYNC
 	.include "68k_var/text_scr.var"
 	.include "68k_var/joypad1.var"
 	RSL oldPad
+	RSL currentSong
 	RSL StackBottom,200
 	RSL stack,1
 
@@ -42,6 +43,13 @@ vars_len	= RSCOUNT
 	ENDIF
 ******************
 
+	;;----  SBL header ----
+start:
+	bra.w	start2
+	dc.l	start
+	dc.l	jag_end-start
+	dc.l	0
+start2:
 
 init_68k:
 	INCLUDE "68k_inc/startup.inc"
@@ -101,17 +109,48 @@ again:
 
 	moveq	#4,d0
 	cmp.l	DSP_flag_replay_ON_OFF,d0 ; DSP running?
-	bne.s	dsp_runs
+	bne	dsp_runs
 	bsr	GetJoyPad1
+
 	move.l	joy_pad(a6),d0
 	btst	#FIRE_A,d0
-	beq.s	again
+	bne.s	startSong
+
+	moveq	#0,d1
+	btst	#KEY_1,d0
+	bne.s	selected
+	addq.l	#4,d1
+	btst	#KEY_2,d0
+	bne.s	selected
+	addq.l	#4,d1
+	btst	#KEY_3,d0
+	bne.s	selected
+	addq.l	#4,d1
+	btst	#KEY_4,d0
+	bne.s	selected
+	addq.l	#4,d1
+	btst	#KEY_5,d0
+	bne.s	selected
+	bra	again
+selected:
+	move.l	d1,currentSong(a6)
+	lsr.w	#2,d1
+	move.w	d1,d0
+	addq.w	#1,d0
+	move.l	#33<<16|1,Cursor(a6)
+	bsr	PrintDigit
+	bra	again
+
+startSong:
 
 wait_nokey:
 	bsr	GetJoyPad1
 	move.l	joy_pad(a6),d0
 	bne.s	wait_nokey
 
+	lea	songs(pc),a0
+	move.l	currentSong(a6),d0
+	move.l	0(a0,d0.w),DSP_song
 	moveq	#0,d0
 	move.l	d0,DSP_flag_replay_ON_OFF
 	lea	$f1a110,a0
@@ -129,13 +168,11 @@ dsp_runs:
 
 	bsr	PrintHEXl
 
-	move.l	song+song_length,d0
+	move.l	DSP_song,a0
+	move.l	song_length(a0),d0
 	bsr	PrintHEXl
 
 no_pos_change:
-
-
-
 	move.l	DSP_pad1,d1
 	move.l	oldPad(a6),d0
 	move.l	d1,oldPad(a6)
@@ -326,9 +363,16 @@ mc_wbl1:
 * text-data
 	;;    0123456789012345678901234567890123456789
 Hallo:	dc.b "JagHively Demo - Player by Ericde45     "
+	dc.b "Press A to start, B to stop song 1      "
 	dc.b "Press 0 to play/pause song              "
-	dc.b "Press A to start, B to stop song        "
-	dc.b "Song position:"
+	dc.b "Song position:                          "
+	dc.b "----------------------------------------"
+	dc.b "-1- Gone                                "
+	dc.b "-2- Headcrash (Hively Remix, Virgill)   "
+	dc.b "-3- Echos in the Mist by Samurai_Crow   "
+	dc.b "-4- Never gonna ... (Xeron)             "
+	dc.b "-5- joey&splif-pantsomime               "
+
 	dc.b 0
 
 	.phrase
@@ -447,10 +491,26 @@ _end_60hz:
 opl_size	= _end_60hz-obl1_60hz
 
 	print "OPL (phrases) ",/u opl_size/8
-jag_end:
 
+songs:
+	dc.l	gone
+	dc.l	headcrash
+	dc.l	echo6
+	dc.l	chip
+	dc.l	joey
 song:
+gone:
 	incbin "hvl/gone.ahx.streambits"
+headcrash:
+	incbin "hvl/Virgill-Headcrash_Hively_Rmx.hvl.streambits"
+echo6:
+	incbin "hvl/echo6.hvl.streambits"
+chip:
+	incbin "hvl/chiprolled.hvl.streambits"
+joey:
+	incbin "hvl/joey_splif-pantsomime.hvl.streambits"
+;;; ----------------------------------------
+jag_end:
 	BSS
 
 	END
