@@ -11,7 +11,7 @@
 vars		= $0001000
 
 max_x_txt	= 320
-max_y_txt	= 10*8
+max_y_txt	= 12*8
 
 max_x		= rez_x
 max_y_gr	= 100
@@ -31,7 +31,6 @@ ScreenMode	EQU CRY16|VIDEN|PWIDTH4|BGEN|CSYNC
 	RSW a_vdb
 	RSW dummy
 	.include "68k_var/text_scr.var"
-	.include "68k_var/joypad1.var"
 	RSL oldPad
 	RSL currentSong
 	RSL StackBottom,200
@@ -100,78 +99,25 @@ init_68k:
 	lea	Hallo(pc),a0
 	bsr	PrintA0
 
-	move.l	#4,DSP_flag_replay_ON_OFF
-
 	moveq	#0,d7
 	.globl again
 again:
 	stop	#$2000		; wait for GPU interrupt
 
-	moveq	#4,d0
-	cmp.l	DSP_flag_replay_ON_OFF,d0 ; DSP running?
-	bne	dsp_runs
-	bsr	GetJoyPad1
+//->	clr.l	Cursor(a6)
+//->	move.l	DSP_sample_ptr,d0
+//->	bsr	PrintHEXl
 
-	move.l	joy_pad(a6),d0
-	btst	#FIRE_A,d0
-	bne.s	startSong
-
-	moveq	#0,d1
-	btst	#KEY_1,d0
-	bne.s	selected
-	addq.l	#4,d1
-	btst	#KEY_2,d0
-	bne.s	selected
-	addq.l	#4,d1
-	btst	#KEY_3,d0
-	bne.s	selected
-	addq.l	#4,d1
-	btst	#KEY_4,d0
-	bne.s	selected
-	addq.l	#4,d1
-	btst	#KEY_5,d0
-	bne.s	selected
-	bra	again
-selected:
-	move.l	d1,currentSong(a6)
-	lsr.w	#2,d1
-	move.w	d1,d0
-	addq.w	#1,d0
-	move.l	#33<<16|1,Cursor(a6)
-	bsr	PrintDigit
-	bra	again
-
-startSong:
-
-wait_nokey:
-	bsr	GetJoyPad1
-	move.l	joy_pad(a6),d0
-	bne.s	wait_nokey
-
-	lea	songs(pc),a0
-	move.l	currentSong(a6),d0
-	move.l	0(a0,d0.w),DSP_song
-	moveq	#0,d0
-	move.l	d0,DSP_flag_replay_ON_OFF
-	lea	$f1a110,a0
-	move.l	#$f1b000,(a0)+
-	moveq	#1,d0
-	move.l	d0,(a0)
-
-dsp_runs:
 	move.l	#14<<16|3,d0
 	move.l	d0,Cursor(a6)
 
 	move.l	DSP_stream_pos,d0
-	cmp.l	d0,d7
-	beq.s	no_pos_change
 
 	bsr	PrintHEXl
 
 	move.l	DSP_song,a0
 	move.l	song_length(a0),d0
 	bsr	PrintHEXl
-
 no_pos_change:
 	move.l	DSP_pad1,d1
 	move.l	oldPad(a6),d0
@@ -181,45 +127,100 @@ no_pos_change:
 
 	btst.l	#U235SE_BBUT_0,d0
 	beq.s	no_pause
+
 	lea	DSP_flag_replay_ON_OFF,a0
 	moveq	#5,d0
 	move.l	(a0),d1
+	beq.s	ok_pause
+	cmp.l	d0,d1
+	bne.s	again
+ok_pause:
 	eor.l	d0,d1
 	move.l	d1,(a0)
 	bra	again
-no_pause:
-	btst.l	#U235SE_BBUT_B,d0
-	beq	again
-	move.l	#1,DSP_flag_replay_ON_OFF
-	bra	again
-printVal:
-	move.l	(a4)+,d0
-	bra	PrintHEXl
 
+no_pause:
+	btst.l	#U235SE_BBUT_A,d0
+	beq.s	no_restart
+	lea	DSP_flag_replay_ON_OFF,a0
+	moveq	#6,d0
+	move.l	d0,(a0)
+	subq	#1,d0
+wait_restart:
+	cmp.l	(a0),d0
+	bne.s	wait_restart
+	moveq	#0,d0
+	move.l	d0,(a0)
+	bra	again
+
+no_restart:
+	cmp.l	#5,DSP_flag_replay_ON_OFF ; paused/stopped
+	bne.s	playing
+
+	moveq	#0,d1
+	btst	#U235SE_BBUT_1,d0
+	bne.s	selected
+	addq.l	#4,d1
+	btst	#U235SE_BBUT_2,d0
+	bne.s	selected
+	addq.l	#4,d1
+	btst	#U235SE_BBUT_3,d0
+	bne.s	selected
+	addq.l	#4,d1
+	btst	#U235SE_BBUT_4,d0
+	bne.s	selected
+	addq.l	#4,d1
+	btst	#U235SE_BBUT_5,d0
+	bne.s	selected
+	bra	playing
+selected:
+	move.l	d1,currentSong(a6)
+
+	lea	songs(pc),a0
+	move.l	0(a0,d1.w),DSP_song
+
+	lsr.w	#2,d1
+	move.w	d1,d0
+	addq.w	#1,d0
+	move.l	#33<<16|1,Cursor(a6)
+	bsr	PrintDigit
+
+	move.l	#6,DSP_flag_replay_ON_OFF
+	bra	again
+
+playing:
+	btst	#U235SE_BBUT_C,d0
+	beq	again
+	lea	bell,a0
+	add.l	a0,a0
+	move.l	#(bell_e-bell)*2,DSP_sample_size
+	move.l	a0,DSP_sample_ptr
+	bra	again
 ******************
 	.include "68k_inc/text_scr.inc"
-	.include "68k_inc/joypad1.inc"
 ******************
 * InitDSP
 InitDSP:
-	lea	$f1a110,a0
-	moveq	#0,d0
-	move.l	d0,4(a0)
-	lea	$f1b000,a1
-	move.l	a1,(a0)
-	lea	DSPcode(pc),a0
-	move.l	#(DSPcode_end-DSPcode)/4,d0
-cpdsp:
-	move.l	(a0)+,(a1)+
-	dbra	d0,cpdsp
-
 	lea	DSP_flag_replay_ON_OFF,a0
-	moveq	#0,d0
-	move.l	d0,(a0)+	; start playing
+	moveq	#5,d0
+	move.l	d0,(a0)+	; no song playing
 	move.l	#panning_table,(a0)+
 	move.l	#binPrecalcTable,(a0)+
 	move.l	#$100,(a0)+	; master volume
 	move.l	#song,(a0)
+
+	lea	$f1a114,a0
+	moveq	#0,d0
+	move.l	d0,-(a0)
+	lea	$f1b000,a1
+	move.l	a1,(a0)+
+	lea	DSPcode(pc),a2
+	move.l	#(DSPcode_end-DSPcode)/4,d0
+cpdsp:
+	move.l	(a2)+,(a1)+
+	dbra	d0,cpdsp
+	moveq	#1,d0
+	move.l	d0,(a0)
 	rts
 DSPcode:
 	incbin "../player/hively_player.bin"
@@ -363,9 +364,10 @@ mc_wbl1:
 * text-data
 	;;    0123456789012345678901234567890123456789
 Hallo:	dc.b "JagHively Demo - Player by Ericde45     "
-	dc.b "Press A to start, B to stop song 1      "
+	dc.b "Press A to restart song          1      "
 	dc.b "Press 0 to play/pause song              "
 	dc.b "Song position:                          "
+	dc.b "Press C to play sample                  "
 	dc.b "----------------------------------------"
 	dc.b "-1- Gone                                "
 	dc.b "-2- Headcrash (Hively Remix, Virgill)   "
@@ -509,6 +511,10 @@ chip:
 	incbin "hvl/chiprolled.hvl.streambits"
 joey:
 	incbin "hvl/joey_splif-pantsomime.hvl.streambits"
+bell:
+	.incbin "bell.raw"
+bell_e:
+	print "bell: ",/x/l bell*2
 ;;; ----------------------------------------
 jag_end:
 	BSS
