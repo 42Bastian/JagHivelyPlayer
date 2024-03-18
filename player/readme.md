@@ -23,3 +23,8 @@ If enabled, the DSP code read the two pads and stores the raw data to `DSP_pad1`
 In order to stop the DSP, write `1` to `DSP_flag_replay_ON_OFF` and wait until it becomes `4`.
 
 Writing `5` will pause the current song.
+
+Writing `6` will restart the current song / start a new song.
+
+16kHz/8bit signed samples can be played. Mixed right/left.
+Store the sample address * 2 at `DSP_sample_ptr` and the size*2 at `DSP_sample_size`.
