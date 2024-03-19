@@ -2,10 +2,6 @@
 
 This is an optimized standalone version of the hively player be Ericde45.
 
-This is still WIP !!!
-
-Usage demo will follow.
-
 # Setup
 
 Include `hively_player.inc` into your source to get the parameter addresses.
