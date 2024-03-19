@@ -5,8 +5,11 @@ This is an optimized standalone version of the hively player be Ericde45.
 # Setup
 
 Include `hively_player.inc` into your source to get the parameter addresses.
+
 Include `hively_player.bin` and copy it to the start of the DSP RAM.
+
 Include `AHX_panning.bin` and store its address to `DSP_panning_table`.
+
 Include `AHX_FilterPrecalc.bin` and store its address to `DSP_filterPreCalcTable`.
 
 Set the master volume (`DSP_master_volume`) for example to $100 ( which is normal).
