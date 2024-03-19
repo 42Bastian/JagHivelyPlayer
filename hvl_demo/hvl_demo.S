@@ -33,6 +33,7 @@ ScreenMode	EQU CRY16|VIDEN|PWIDTH4|BGEN|CSYNC
 	.include "68k_var/text_scr.var"
 	RSL oldPad
 	RSL currentSong
+	RSL volume
 	RSL StackBottom,200
 	RSL stack,1
 
@@ -91,6 +92,8 @@ init_68k:
 	bsr	InitOP
 	move.w #ScreenMode,$28(a5)
 
+	move.l	#$100,volume(a6)
+
 	bsr	InitGPU
 	bsr	InitDSP
 
@@ -125,6 +128,30 @@ no_pos_change:
 	eor.l	d1,d0
 	and.l	d1,d0
 
+	moveq	#3,d2
+	and.w	d1,d2
+	beq.s	no_volume
+
+	moveq	#4,d1
+	btst	#U235SE_BBUT_UP,d2
+	bne.s	up
+	neg.l	d1
+up:
+	move.l	volume(a6),d0
+	move.l	d0,d2
+	add.l	d1,d2
+	bmi.s	no_change
+	cmp.l	#$200,d2
+	bhi.s	no_change
+	move.l	d2,d0
+no_change:
+	move.l	d0,volume(a6)
+	move.l	d0,DSP_master_volume
+	move.l	#8<<16|5,Cursor(a6)
+	bsr	PrintDEZ
+	bra	again
+
+no_volume:
 	btst.l	#U235SE_BBUT_0,d0
 	beq.s	no_pause
 
@@ -133,7 +160,7 @@ no_pos_change:
 	move.l	(a0),d1
 	beq.s	ok_pause
 	cmp.l	d0,d1
-	bne.s	again
+	bne	again
 ok_pause:
 	eor.l	d0,d1
 	move.l	d1,(a0)
@@ -206,8 +233,8 @@ InitDSP:
 	move.l	d0,(a0)+	; no song playing
 	move.l	#panning_table,(a0)+
 	move.l	#binPrecalcTable,(a0)+
-	move.l	#$100,(a0)+	; master volume
-	move.l	#song,(a0)
+	move.l	volume(a6),(a0)+	; master volume
+	move.l	songs(pc),(a0)+
 
 	lea	$f1a114,a0
 	moveq	#0,d0
@@ -368,6 +395,7 @@ Hallo:	dc.b "JagHively Demo - Player by Ericde45     "
 	dc.b "Press 0 to play/pause song              "
 	dc.b "Song position:                          "
 	dc.b "Press C to play sample                  "
+	dc.b "Volume: 00255  (up/down)                "
 	dc.b "----------------------------------------"
 	dc.b "-1- Gone                                "
 	dc.b "-2- Headcrash (Hively Remix, Virgill)   "
