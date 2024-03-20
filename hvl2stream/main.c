@@ -1,5 +1,7 @@
 #include <stdio.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <string.h>
 
 #include "hvl_replay.h"
