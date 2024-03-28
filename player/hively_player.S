@@ -4,7 +4,7 @@
 ;;; Compiletime configuration
 READ_PAD        equ 1
 UPDATE_SONG_POS equ 1
-DISPLAY_TIME    equ 1
+DISPLAY_TIME    equ 0
 
 ;;; ----------------------------------------
 ;;; parameters
